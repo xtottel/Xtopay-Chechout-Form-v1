@@ -1,0 +1,22 @@
+{
+  "name": "Xtopay Checkout",
+  "short_name": "Xtopay",
+  "description": "Fast, secure, and modern online checkout by Xtopay.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0d9488",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://xtopay.co/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://xtopay.co/favicon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

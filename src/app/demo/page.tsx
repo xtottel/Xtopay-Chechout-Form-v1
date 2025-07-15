@@ -6,7 +6,7 @@ const IntegrationDemoPage: React.FC = () => {
     amount: "",
     name: "",
     phoneNumber: "",
-  });
+  }); 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
