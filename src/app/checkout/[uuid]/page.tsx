@@ -1,14 +1,21 @@
+// src/app/checkout/[uuid]/page.tsx
+import PaymentOptionSelector from '@components/payment/PaymentOptionSelector'
+import { notFound } from 'next/navigation'
+import Script from 'next/script'
 
-"use client";
-import React from "react";
-import PaymentOptionSelector from "@components/payment/PaymentOptionSelector";
-import Script from "next/script";
-import { useParams } from "next/navigation";
+interface PageProps {
+  params: { uuid: string }
+}
 
+export default async function PaymentPage({ params }: PageProps) {
+  const { uuid } = params
 
-const PaymentPage: React.FC = () => {
-  const params = useParams<{ uuid: string }>();
-  const uuid = params.uuid;
+  // Validate the checkout session exists
+  const session = await fetchCheckoutDetails(uuid)
+
+  if (!session) {
+    notFound()
+  }
 
   return (
     <>
@@ -18,36 +25,21 @@ const PaymentPage: React.FC = () => {
         strategy="afterInteractive"
       />
     </>
-  );
-};
+  )
+}
 
-export default PaymentPage;
+async function fetchCheckoutDetails(uuid: string) {
+  try {
+    const res = await fetch(
+      `${process.env.API_BASE_URL}/checkout/details/${uuid}`,
+      { cache: 'no-store' }
+    )
+    if (!res.ok) return null
+    return await res.json()
+  } catch (error) {
+    console.error('Error fetching checkout details:', error)
+    return null
+  }
+}
 
-
-// import PaymentOptionSelector from "@components/payment/PaymentOptionSelector";
-// import { notFound } from "next/navigation";
-
-// interface PageProps {
-//   params: { uuid: string };
-// }
-
-// export default async function PaymentPage({ params }: PageProps) {
-//   const { uuid } = params;
-
-//   // Simulate a fetch
-//   const session = await fetchCheckout(uuid); // You can connect this to your API
-
-//   if (!session) {
-//     notFound(); // Show 404 page
-//   }
-
-//   return <PaymentOptionSelector uuid={uuid} />;
-// }
-
-// async function fetchCheckout(uuid: string) {
-//   const res = await fetch(`${process.env.API_BASE_URL}/checkout/${uuid}`, {
-//     cache: "no-store",
-//   });
-//   if (!res.ok) return null;
-//   return res.json();
-// }
+export const dynamic = 'force-dynamic'
