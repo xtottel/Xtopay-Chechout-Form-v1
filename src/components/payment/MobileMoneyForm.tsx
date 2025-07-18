@@ -3,25 +3,23 @@ import React, { useState, ChangeEvent } from "react";
 import Image from "next/image";
 import { Phone, ChevronDown } from "lucide-react";
 
-interface WalletPaymentFormProps {
+interface MobileMoneyPaymentFormProps {
   onPaymentInitiated: () => void;
 }
 
-interface WalletPaymentData {
-  walletProvider: string;
+interface MobileMoneyPaymentData {
   phoneNumber: string;
+  network: string;
 }
 
-const WalletPaymentForm: React.FC<WalletPaymentFormProps> = ({
+const MobileMoneyForm: React.FC<MobileMoneyPaymentFormProps> = ({
   onPaymentInitiated,
 }) => {
-  const [formData, setFormData] = useState<WalletPaymentData>({
-    walletProvider: "Xtopay",
+  const [formData, setFormData] = useState<MobileMoneyPaymentData>({
     phoneNumber: "",
+    network: "momo",
   });
   const [isLoading, setIsLoading] = useState(false);
-
-  const isXtopay = formData.walletProvider === "Xtopay";
 
   const handleChange = (
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -37,21 +35,9 @@ const WalletPaymentForm: React.FC<WalletPaymentFormProps> = ({
     e.preventDefault();
     setIsLoading(true);
     
-    const { phoneNumber } = formData;
-
-    // Validate input
-    if (isXtopay) {
-      if (!/^\d{8}$/.test(phoneNumber)) {
-        alert("Please enter a valid 8-digit Xtopay account number");
-        setIsLoading(false);
-        return;
-      }
-    } else {
-      if (!/^0\d{9}$/.test(phoneNumber)) {
-        alert("Please enter a valid 10-digit phone number starting with 0");
-        setIsLoading(false);
-        return;
-      }
+    if (!formData.phoneNumber || !formData.network) {
+      setIsLoading(false);
+      return;
     }
 
     // Simulate API call
@@ -63,58 +49,58 @@ const WalletPaymentForm: React.FC<WalletPaymentFormProps> = ({
   return (
     <div className="w-full rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800 sm:p-8">
       <h2 className="mb-6 text-2xl font-bold text-gray-900 dark:text-white text-center">
-        Wallet Payment
+        Mobile Money Payment
       </h2>
 
       <form onSubmit={handleSubmit}>
         <div className="mb-6 grid grid-cols-1 gap-4">
-          {/* Wallet Provider */}
-          <div>
+          {/* Network Select */}
+          <div className="col-span-2">
             <label
-              htmlFor="walletProvider"
+              htmlFor="network"
               className="mb-2 block text-sm font-medium text-gray-900 dark:text-white"
             >
-              Wallet Provider*
+              Mobile Network*
             </label>
             <div className="relative">
-              {/* Left Logo */}
+              {/* Left Icon */}
               <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                 <Image
-                  src={`/brands/${formData.walletProvider.toLowerCase()}.svg`}
-                  alt={formData.walletProvider}
+                  src={`/brands/${formData.network}.svg`}
+                  alt={formData.network}
                   width={20}
                   height={20}
                   className="h-5 w-5 object-contain"
                 />
               </div>
 
+              {/* Select Input */}
               <select
-                id="walletProvider"
+                id="network"
                 className="block w-full appearance-none rounded-lg border border-gray-300 bg-gray-50 p-2.5 pl-10 pr-10 text-sm text-gray-900 focus:border-[#513b7e] focus:ring-[#513b7e] dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-[#513b7e] dark:focus:ring-[#513b7e]"
-                value={formData.walletProvider}
+                value={formData.network}
                 onChange={handleChange}
                 required
               >
-                <option value="Xtopay">Xtopay</option>
-                <option value="hubtel">Hubtel</option>
-                <option value="gmoney">GMoney</option>
-                <option value="zeepay">Zeepay</option>
+                <option value="momo">MTN Mobile Money</option>
+                <option value="telecel">Telecel Cash</option>
+                <option value="at">AT Money</option>
               </select>
 
-              {/* Right Dropdown */}
+              {/* Right Dropdown Icon */}
               <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
                 <ChevronDown className="h-4 w-4 text-gray-500 dark:text-gray-400" />
               </div>
             </div>
           </div>
 
-          {/* Phone/Account Number */}
-          <div>
+          {/* Phone Number Input */}
+          <div className="col-span-2">
             <label
               htmlFor="phoneNumber"
               className="mb-2 block text-sm font-medium text-gray-900 dark:text-white"
             >
-              {isXtopay ? "Xtopay Account Number*" : "Phone Number*"}
+              Phone Number*
             </label>
             <div className="relative">
               {/* Left Icon */}
@@ -126,15 +112,13 @@ const WalletPaymentForm: React.FC<WalletPaymentFormProps> = ({
                 type="tel"
                 id="phoneNumber"
                 className="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 pl-10 text-sm text-gray-900 focus:border-[#513b7e] focus:ring-[#513b7e] dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-[#513b7e] dark:focus:ring-[#513b7e]"
-                placeholder={isXtopay ? "e.g. 08012345" : "e.g. 0244123456"}
+                placeholder="0244123456"
                 value={formData.phoneNumber}
                 onChange={(e) => {
-                  const cleaned = e.target.value.replace(/\D/g, "");
+                  const value = e.target.value.replace(/\D/g, "");
                   setFormData((prev) => ({
                     ...prev,
-                    phoneNumber: isXtopay
-                      ? cleaned.slice(0, 8)
-                      : cleaned.slice(0, 10),
+                    phoneNumber: value,
                   }));
                 }}
                 required
@@ -161,7 +145,7 @@ const WalletPaymentForm: React.FC<WalletPaymentFormProps> = ({
               Processing...
             </>
           ) : (
-            'Pay with Digital Wallet'
+            'Pay with Mobile Money'
           )}
         </button>
       </form>
@@ -169,4 +153,4 @@ const WalletPaymentForm: React.FC<WalletPaymentFormProps> = ({
   );
 };
 
-export default WalletPaymentForm;
+export default MobileMoneyForm;

@@ -1,9 +1,9 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import CardPaymentForm from "./CardPaymentForm";
-import MobileMoneyPaymentForm from "./MobileMoneyPaymentForm";
-import WalletPaymentForm from "./WalletPaymentForm";
-import OTPVerificationForm from "./OTPVerificationForm";
+import CardForm from "./CardForm";
+import MobileMoneyForm from "./MobileMoneyForm";
+import WalletForm from "./WalletForm";
+import OTPForm from "./OTPForm";
 import StatusModal from "./StatusModal";
 import {
   Lock,
@@ -12,10 +12,11 @@ import {
   CreditCard,
   Smartphone,
   Wallet,
+  BadgeCent,
   HandCoins,
 } from "lucide-react";
 import Image from "next/image";
-import { ReportProblemModal } from "./ReportProblemModal";
+import { ReportModal } from "./ReportModal";
 import Link from "next/link";
 
 type PaymentMethod = "card" | "mobileMoney" | "wallet";
@@ -25,8 +26,7 @@ interface PaymentOptionSelectorProps {
   uuid?: string;
 }
 
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE || "https://api.xtopay.co";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://api.xtopay.co";
 
 const PaymentOptionSelector: React.FC<PaymentOptionSelectorProps> = ({
   uuid,
@@ -281,7 +281,7 @@ const PaymentOptionSelector: React.FC<PaymentOptionSelectorProps> = ({
         <div className="space-y-6">
           {showOtp ? (
             <div className="space-y-6">
-              <OTPVerificationForm
+              <OTPForm
                 onComplete={handleOtpComplete}
                 onResend={() => {
                   log("Resending OTP");
@@ -313,12 +313,21 @@ const PaymentOptionSelector: React.FC<PaymentOptionSelectorProps> = ({
                   brands: ["xtopay", "hubtel", "gmoney", "zeepay"],
                   color: "emerald",
                 },
+                //eCedis
+                {
+                  method: "ecedis",
+                  title: "eCedis",
+                  icon: <BadgeCent className="h-5 w-5 text-[#FFD700]" />, // Gold icon
+                  brands: ["BoG"],
+                  color: "gold", 
+                },
+                //bnpl
                 {
                   method: "bnpl",
                   title: "Pay Later",
-                  icon: <HandCoins className="h-5 w-5 text-purple-500" />,
+                  icon: <HandCoins className="h-5 w-5 text-pink-500" />,
                   brands: ["xtopay"],
-                  color: "purple",
+                  color: "pink",
                 },
               ].map((option) => (
                 <button
@@ -380,19 +389,19 @@ const PaymentOptionSelector: React.FC<PaymentOptionSelectorProps> = ({
               </button>
 
               {selectedMethod === "card" && (
-                <CardPaymentForm
+                <CardForm
                   onPaymentInitiated={() => handlePaymentInitiated("card")}
                 />
               )}
               {selectedMethod === "mobileMoney" && (
-                <MobileMoneyPaymentForm
+                <MobileMoneyForm
                   onPaymentInitiated={() =>
                     handlePaymentInitiated("mobileMoney")
                   }
                 />
               )}
               {selectedMethod === "wallet" && (
-                <WalletPaymentForm
+                <WalletForm
                   onPaymentInitiated={() => handlePaymentInitiated("wallet")}
                 />
               )}
@@ -420,7 +429,7 @@ const PaymentOptionSelector: React.FC<PaymentOptionSelectorProps> = ({
         }}
       />
 
-      <ReportProblemModal
+      <ReportModal
         isOpen={showReportModal}
         onClose={() => {
           log("Report problem modal closed");

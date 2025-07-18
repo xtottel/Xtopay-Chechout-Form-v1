@@ -13,7 +13,7 @@ interface CardPaymentData {
   cvv: string;
 }
 
-const CardPaymentForm: React.FC<CardPaymentFormProps> = ({
+const CardForm: React.FC<CardPaymentFormProps> = ({
   onPaymentInitiated,
 }) => {
   const [formData, setFormData] = useState<CardPaymentData>({
@@ -240,4 +240,4 @@ const CardPaymentForm: React.FC<CardPaymentFormProps> = ({
   );
 };
 
-export default CardPaymentForm;
+export default CardForm;

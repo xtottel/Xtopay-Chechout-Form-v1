@@ -33,9 +33,21 @@ export default function PaymentPage() {
     loadSession()
   }, [uuid])
 
+  // if (isLoading) {
+  //   return <div>Loading...</div> // Or your preferred loading state
+  // }
+
   if (isLoading) {
-    return <div>Loading...</div> // Or your preferred loading state
-  }
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-[#f8f9fc] text-gray-600">
+      <div className="flex flex-col items-center">
+        <div className="w-12 h-12 border-4 border-[#4a3673] border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p className="text-base font-medium animate-pulse">Loading payment session...</p>
+      </div>
+    </div>
+  )
+}
+
 
   return (
     <>

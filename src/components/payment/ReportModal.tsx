@@ -8,7 +8,7 @@ interface ReportProblemModalProps {
   onClose: () => void;
 }
 
-export const ReportProblemModal: React.FC<ReportProblemModalProps> = ({
+export const ReportModal: React.FC<ReportProblemModalProps> = ({
   isOpen,
   onClose,
 }) => {
