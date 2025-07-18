@@ -3,8 +3,6 @@ import React, { useState, useEffect } from "react";
 import CardForm from "./CardForm";
 import MobileMoneyForm from "./MobileMoneyForm";
 import WalletForm from "./WalletForm";
-import OTPForm from "./OTPForm";
-import StatusModal from "./StatusModal";
 import {
   Lock,
   ArrowLeft,
@@ -31,17 +29,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://api.xtopay.co";
 const PaymentOptionSelector: React.FC<PaymentOptionSelectorProps> = ({
   uuid,
 }) => {
-  const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(
-    null
-  );
-  const [showOtp, setShowOtp] = useState(false);
-  const [showReportModal, setShowReportModal] = useState(false);
-  const [modalState, setModalState] = useState({
-    isOpen: false,
-    status: "success" as "success" | "failed" | "insufficient",
-    title: "",
-    description: "",
-  });
+  const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
   const [paymentDetails, setPaymentDetails] = useState<{
     amount: number;
     currency: string;
@@ -51,6 +39,7 @@ const PaymentOptionSelector: React.FC<PaymentOptionSelectorProps> = ({
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [showReportModal, setShowReportModal] = useState(false);
 
   // Enhanced logging function
   const log = (message: string, data?: unknown) => {
@@ -60,40 +49,32 @@ const PaymentOptionSelector: React.FC<PaymentOptionSelectorProps> = ({
   // Fetch payment details when component mounts
   useEffect(() => {
     if (!uuid) {
-      // log("No UUID provided, skipping payment details fetch");
       setLoading(false);
       return;
     }
 
     const fetchPaymentDetails = async () => {
       try {
-        // log("Starting payment details fetch", { uuid });
         setLoading(true);
         setError("");
 
         const res = await fetch(`${API_BASE}/checkout/details/${uuid}`);
-        // log("API response received", { status: res.status });
-
         if (!res.ok) {
           const errorText = await res.text();
           throw new Error(`HTTP ${res.status}: ${errorText}`);
         }
 
         const responseData = await res.json();
-        // log("API response data", responseData);
-
         if (!responseData?.data) {
           throw new Error("Invalid response structure - missing data");
         }
 
         const { data } = responseData;
 
-        // Validate required fields
         if (typeof data.amount === "undefined" || !data.businessName) {
           throw new Error("Missing required payment details");
         }
 
-        // Convert amount to number safely
         const amount = Number(data.amount);
         if (isNaN(amount)) {
           throw new Error("Invalid amount format");
@@ -107,68 +88,19 @@ const PaymentOptionSelector: React.FC<PaymentOptionSelectorProps> = ({
           logoUrl: data.logoUrl,
         };
 
-        // log("Processed payment details", paymentData);
         setPaymentDetails(paymentData);
       } catch (err) {
         const errorMessage =
           err instanceof Error ? err.message : "Unknown error";
-        // log("Error fetching payment details", { error: errorMessage });
         setError(errorMessage);
         setPaymentDetails(null);
       } finally {
         setLoading(false);
-        // log("Payment details fetch completed");
       }
     };
 
     fetchPaymentDetails();
   }, [uuid]);
-
-  const handlePaymentInitiated = (method: PaymentMethod) => {
-    // log("Payment initiated", { method });
-    if (method !== "card") {
-      setShowOtp(true);
-    } else {
-      setTimeout(() => {
-        setModalState({
-          isOpen: true,
-          status: "success",
-          title: "Payment Successful",
-          description: "Your card payment has been processed successfully.",
-        });
-      }, 1500);
-    }
-  };
-
-  const handleOtpComplete = () => {
-    log("OTP completed");
-    setShowOtp(false);
-    setTimeout(() => {
-      const status =
-        Math.random() > 0.5
-          ? "success"
-          : Math.random() > 0.5
-            ? "failed"
-            : "insufficient";
-      log("Setting payment status", { status });
-      setModalState({
-        isOpen: true,
-        status,
-        title:
-          status === "success"
-            ? "Payment Successful"
-            : status === "failed"
-              ? "Verification Failed"
-              : "Insufficient Funds",
-        description:
-          status === "success"
-            ? "Your payment has been verified and completed successfully."
-            : status === "failed"
-              ? "The code you entered is invalid. Please try again."
-              : "You don't have enough funds to complete this transaction.",
-      });
-    }, 1500);
-  };
 
   const SecurityBadge = () => (
     <div className="flex justify-center">
@@ -190,8 +122,6 @@ const PaymentOptionSelector: React.FC<PaymentOptionSelectorProps> = ({
   );
 
   const PaymentDetailsDisplay = () => {
-    log("Rendering PaymentDetailsDisplay", { loading, error, paymentDetails });
-
     if (loading) {
       return (
         <div className="p-4 rounded-lg border border-gray-200 bg-white dark:bg-gray-800 dark:border-gray-700">
@@ -221,7 +151,6 @@ const PaymentOptionSelector: React.FC<PaymentOptionSelectorProps> = ({
 
     return (
       <div className="flex flex-col gap-2 p-3 sm:p-4 rounded-lg border border-gray-200 bg-[#fff4cc] dark:border-gray-700 dark:bg-gray-800">
-        {/* <div className="flex items-center gap-2"> */}
         <div className="flex items-center gap-3 sm:gap-4">
           {paymentDetails.logoUrl ? (
             <div className="shrink-0 flex items-center justify-center w-8 h-8 bg-white dark:bg-gray-900 rounded-full border border-gray-100 dark:border-gray-700 overflow-hidden">
@@ -230,7 +159,6 @@ const PaymentOptionSelector: React.FC<PaymentOptionSelectorProps> = ({
                 alt={paymentDetails.businessName}
                 width={40}
                 height={40}
-                // className="object-cover"
                 className="rounded-full object-contain"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
@@ -259,10 +187,8 @@ const PaymentOptionSelector: React.FC<PaymentOptionSelectorProps> = ({
           </div>
         </div>
 
-        {/* Divider */}
         <div className="border-t border-gray-200 dark:border-gray-700 mt-1 mb-0.5"></div>
 
-        {/* Amount Info */}
         <div className="flex justify-between items-center text-xs font-semibold text-gray-700 dark:text-gray-300">
           <span>Amount to pay</span>
           <span className="text-[#4a3c78] dark:text-blue-400">
@@ -278,19 +204,9 @@ const PaymentOptionSelector: React.FC<PaymentOptionSelectorProps> = ({
       <PaymentDetailsDisplay />
 
       {uuid && (
-        <div className="space-y-6">
-          {showOtp ? (
-            <div className="space-y-6">
-              <OTPForm
-                onComplete={handleOtpComplete}
-                onResend={() => {
-                  log("Resending OTP");
-                  // Implement OTP resend logic here
-                }}
-              />
-            </div>
-          ) : !selectedMethod ? (
-            <div className="space-y-3 py-4">
+        <div className="space-y-6 mt-6">         
+          {!selectedMethod ? (
+            <div className="space-y-3">
               {[
                 {
                   method: "mobileMoney",
@@ -310,23 +226,21 @@ const PaymentOptionSelector: React.FC<PaymentOptionSelectorProps> = ({
                   method: "wallet",
                   title: "Wallet",
                   icon: <Wallet className="h-5 w-5 text-emerald-500" />,
-                  brands: ["xtopay", "hubtel", "gmoney", "zeepay"],
+                  brands: ["xtopay", "hubtel", "gmoney", "zeepay", "Kowri","expresspay"],
                   color: "emerald",
                 },
-                //eCedis
                 {
-                  method: "ecedis",
-                  title: "eCedis",
-                  icon: <BadgeCent className="h-5 w-5 text-[#FFD700]" />, // Gold icon
-                  brands: ["BoG"],
+                  method: "ecedi",
+                  title: "eCedi",
+                  icon: <BadgeCent className="h-5 w-5 text-[#FFD700]" />,
+                  brands: ["BoG","ghipss"],
                   color: "gold", 
                 },
-                //bnpl
                 {
-                  method: "bnpl",
-                  title: "Pay Later",
+                  method: "pss",
+                  title: "Pay Small Small",
                   icon: <HandCoins className="h-5 w-5 text-pink-500" />,
-                  brands: ["xtopay"],
+                  brands: ["momo","telecel"],
                   color: "pink",
                 },
               ].map((option) => (
@@ -339,9 +253,7 @@ const PaymentOptionSelector: React.FC<PaymentOptionSelectorProps> = ({
                   className="flex w-full items-center justify-between rounded-lg border border-gray-200 bg-white p-3.5 transition-colors hover:border-[#513b7e] hover:bg-[#f5f2fa] dark:border-gray-700 dark:bg-gray-800 dark:hover:border-[#7e6b9e]"
                 >
                   <div className="flex items-center gap-3">
-                    <div
-                      className={`rounded-lg bg-[#f5f2fa] p-2 dark:bg-[#3d2c5f]`}
-                    >
+                    <div className={`rounded-lg bg-[#f5f2fa] p-2 dark:bg-[#3d2c5f]`}>
                       {option.icon}
                     </div>
                     <span className="font-medium text-gray-900 dark:text-white">
@@ -359,10 +271,6 @@ const PaymentOptionSelector: React.FC<PaymentOptionSelectorProps> = ({
                           height={16}
                           className="h-4 w-6 object-contain"
                           onError={(e) => {
-                            log("Failed to load brand logo", {
-                              brand,
-                              error: e,
-                            });
                             const target = e.target as HTMLImageElement;
                             target.onerror = null;
                             target.src = "/default-brand-logo.svg";
@@ -382,52 +290,27 @@ const PaymentOptionSelector: React.FC<PaymentOptionSelectorProps> = ({
                   log("Back to payment methods clicked");
                   setSelectedMethod(null);
                 }}
-                className="flex items-center text-sm font-medium text-[#513b7e] hover:text-[#3d2c5f] dark:text-[#7e6b9e]"
+                className="flex items-center text-sm font-medium text-[#513b7e] hover:text-[#3d2c5f] dark:text-[#7e6b9e] mb-4"
               >
                 <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to payment methods
+                Change Payment Method
               </button>
 
-              {selectedMethod === "card" && (
-                <CardForm
-                  onPaymentInitiated={() => handlePaymentInitiated("card")}
-                />
-              )}
-              {selectedMethod === "mobileMoney" && (
-                <MobileMoneyForm
-                  onPaymentInitiated={() =>
-                    handlePaymentInitiated("mobileMoney")
-                  }
-                />
-              )}
-              {selectedMethod === "wallet" && (
-                <WalletForm
-                  onPaymentInitiated={() => handlePaymentInitiated("wallet")}
-                />
-              )}
+              {selectedMethod === "card" && <CardForm onPaymentInitiated={function (): void {
+                  throw new Error("Function not implemented.");
+                } } />}
+              {selectedMethod === "mobileMoney" && <MobileMoneyForm onPaymentInitiated={function (): void {
+                  throw new Error("Function not implemented.");
+                } } />}
+              {selectedMethod === "wallet" && <WalletForm onPaymentInitiated={function (): void {
+                  throw new Error("Function not implemented.");
+                } } />}
             </div>
           )}
 
           <SecurityBadge />
         </div>
       )}
-
-      <StatusModal
-        isOpen={modalState.isOpen}
-        status={modalState.status}
-        title={modalState.title}
-        description={modalState.description}
-        onClose={() => {
-          log("Status modal closed", { status: modalState.status });
-          setModalState((prev) => ({ ...prev, isOpen: false }));
-        }}
-        onAction={() => {
-          log("Status modal action triggered", { status: modalState.status });
-          if (modalState.status === "failed") {
-            setShowOtp(true);
-          }
-        }}
-      />
 
       <ReportModal
         isOpen={showReportModal}

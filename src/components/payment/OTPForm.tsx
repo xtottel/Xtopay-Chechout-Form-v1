@@ -1,36 +1,37 @@
 "use client";
 import React, { useState, useRef, useEffect, KeyboardEvent } from "react";
+import axios from "axios";
 
 interface OTPVerificationFormProps {
   onComplete: (otp: string) => void;
-  onResend: () => void;
+  onResend: () => Promise<void>;
   otpValue?: string;
+  recipient?: string;
 }
 
-const OTPVerificationForm: React.FC<OTPVerificationFormProps> = ({
+const OTPForm: React.FC<OTPVerificationFormProps> = ({
   onComplete,
   onResend,
   otpValue = "",
+  recipient = "****45",
 }) => {
-  const OTP_LENGTH = 6; // Changed from 4 to 6
+  const OTP_LENGTH = 4;
   const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(""));
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [countdown, setCountdown] = useState(30);
+  const [error, setError] = useState("");
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  // Initialize with otpValue if provided
   useEffect(() => {
     if (otpValue && otpValue.length === OTP_LENGTH && /^\d+$/.test(otpValue)) {
       setOtp(otpValue.split(""));
     }
   }, [otpValue]);
 
-  // Focus first input on mount
   useEffect(() => {
     inputRefs.current[0]?.focus();
   }, []);
 
-  // Handle countdown timer for resend OTP
   useEffect(() => {
     if (countdown > 0) {
       const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
@@ -45,12 +46,10 @@ const OTPVerificationForm: React.FC<OTPVerificationFormProps> = ({
     newOtp[index] = value;
     setOtp(newOtp);
 
-    // Move to next input if a digit was entered
     if (value && index < OTP_LENGTH - 1) {
       inputRefs.current[index + 1]?.focus();
     }
 
-    // If all digits are filled, trigger completion
     if (newOtp.every((digit) => digit) && newOtp.length === OTP_LENGTH) {
       handleSubmit(newOtp.join(""));
     }
@@ -79,26 +78,45 @@ const OTPVerificationForm: React.FC<OTPVerificationFormProps> = ({
     }
   };
 
-  const handleSubmit = (otpValue: string) => {
+  const handleSubmit = async (otpValue: string) => {
     setIsSubmitting(true);
-    onComplete(otpValue);
+    setError("");
+    try {
+      const response = await axios.post("/api/otp/verify", {
+        code: otpValue,
+        recipient: recipient.replace(/\*/g, ""),
+      });
+      if (response.data.success) {
+        onComplete(otpValue);
+      } else {
+        setError("Invalid verification code");
+      }
+    } catch (err) {
+      setError("Verification failed. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleResend = () => {
+  const handleResend = async () => {
     if (countdown === 0) {
-      setCountdown(30);
-      onResend();
+      try {
+        await onResend();
+        setCountdown(30);
+      } catch (err) {
+        setError("Failed to resend OTP. Please try again.");
+      }
     }
   };
 
   return (
-    <div className="w-full rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800 sm:p-8">
+    <div className="w-full rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800 sm:p-8">
       <h2 className="mb-6 text-2xl font-bold text-gray-900 dark:text-white text-center">
         Verify Your Mobile Number
       </h2>
       <p className="mb-6 text-gray-600 dark:text-gray-300 text-center">
-        We&apos;ve sent a 6-digit verification code to your mobile number ending
-        with <span className="font-semibold">****45</span>
+        We&apos;ve sent a 4-digit verification code to your mobile number ending
+        with <span className="font-semibold">{recipient}</span>
       </p>
 
       <div className="mb-8 flex justify-center gap-3">
@@ -121,6 +139,12 @@ const OTPVerificationForm: React.FC<OTPVerificationFormProps> = ({
           />
         ))}
       </div>
+
+      {error && (
+        <div className="mb-4 text-center text-sm text-red-500 dark:text-red-400">
+          {error}
+        </div>
+      )}
 
       <div className="flex justify-center">
         <button
@@ -184,4 +208,4 @@ const OTPVerificationForm: React.FC<OTPVerificationFormProps> = ({
   );
 };
 
-export default OTPVerificationForm;
+export default OTPForm;

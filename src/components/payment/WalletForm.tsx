@@ -99,6 +99,8 @@ const WalletForm: React.FC<WalletPaymentFormProps> = ({
                 <option value="hubtel">Hubtel</option>
                 <option value="gmoney">GMoney</option>
                 <option value="zeepay">Zeepay</option>
+                <option value="Kowri">Kowri</option>
+                <option value="expresspay">ExpressPay</option>
               </select>
 
               {/* Right Dropdown */}
