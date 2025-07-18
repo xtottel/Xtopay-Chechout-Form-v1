@@ -3,6 +3,8 @@ import React, { useState, useEffect } from "react";
 import CardForm from "./CardForm";
 import MobileMoneyForm from "./MobileMoneyForm";
 import WalletForm from "./WalletForm";
+import EcediForm from "./EcediForm";
+import PaySmallSmall from "./PaySmallSmall";
 import {
   Lock,
   ArrowLeft,
@@ -17,7 +19,8 @@ import Image from "next/image";
 import { ReportModal } from "./ReportModal";
 import Link from "next/link";
 
-type PaymentMethod = "card" | "mobileMoney" | "wallet";
+
+type PaymentMethod = "card" | "mobileMoney" | "wallet" | "ecedi" | "pss";
 
 interface PaymentOptionSelectorProps {
   cancelUrl?: string;
@@ -28,8 +31,11 @@ const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://api.xtopay.co";
 
 const PaymentOptionSelector: React.FC<PaymentOptionSelectorProps> = ({
   uuid,
+  // cancelUrl,
 }) => {
-  const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
+  const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(
+    null
+  );
   const [paymentDetails, setPaymentDetails] = useState<{
     amount: number;
     currency: string;
@@ -204,7 +210,7 @@ const PaymentOptionSelector: React.FC<PaymentOptionSelectorProps> = ({
       <PaymentDetailsDisplay />
 
       {uuid && (
-        <div className="space-y-6 mt-6">         
+        <div className="space-y-6 mt-6">
           {!selectedMethod ? (
             <div className="space-y-3">
               {[
@@ -226,21 +232,28 @@ const PaymentOptionSelector: React.FC<PaymentOptionSelectorProps> = ({
                   method: "wallet",
                   title: "Wallet",
                   icon: <Wallet className="h-5 w-5 text-emerald-500" />,
-                  brands: ["xtopay", "hubtel", "gmoney", "zeepay", "Kowri","expresspay"],
+                  brands: [
+                    "xtopay",
+                    "hubtel",
+                    "gmoney",
+                    "zeepay",
+                    "Kowri",
+                    "expresspay",
+                  ],
                   color: "emerald",
                 },
                 {
                   method: "ecedi",
                   title: "eCedi",
                   icon: <BadgeCent className="h-5 w-5 text-[#FFD700]" />,
-                  brands: ["BoG","ghipss"],
-                  color: "gold", 
+                  brands: ["BoG", "ghipss"],
+                  color: "gold",
                 },
                 {
                   method: "pss",
                   title: "Pay Small Small",
                   icon: <HandCoins className="h-5 w-5 text-pink-500" />,
-                  brands: ["momo","telecel"],
+                  brands: ["momo", "telecel"],
                   color: "pink",
                 },
               ].map((option) => (
@@ -253,7 +266,9 @@ const PaymentOptionSelector: React.FC<PaymentOptionSelectorProps> = ({
                   className="flex w-full items-center justify-between rounded-lg border border-gray-200 bg-white p-3.5 transition-colors hover:border-[#513b7e] hover:bg-[#f5f2fa] dark:border-gray-700 dark:bg-gray-800 dark:hover:border-[#7e6b9e]"
                 >
                   <div className="flex items-center gap-3">
-                    <div className={`rounded-lg bg-[#f5f2fa] p-2 dark:bg-[#3d2c5f]`}>
+                    <div
+                      className={`rounded-lg bg-[#f5f2fa] p-2 dark:bg-[#3d2c5f]`}
+                    >
                       {option.icon}
                     </div>
                     <span className="font-medium text-gray-900 dark:text-white">
@@ -296,18 +311,38 @@ const PaymentOptionSelector: React.FC<PaymentOptionSelectorProps> = ({
                 Change Payment Method
               </button>
 
-              {selectedMethod === "card" && <CardForm onPaymentInitiated={function (): void {
-                  throw new Error("Function not implemented.");
-                } } />}
-              {selectedMethod === "mobileMoney" && <MobileMoneyForm onPaymentInitiated={function (): void {
-                  throw new Error("Function not implemented.");
-                } } />}
-              {selectedMethod === "wallet" && <WalletForm onPaymentInitiated={function (): void {
-                  throw new Error("Function not implemented.");
-                } } />}
+              {selectedMethod === "card" && (
+                <CardForm
+                  onPaymentInitiated={function (): void {
+                    throw new Error("Function not implemented.");
+                  }}
+                />
+              )}
+              {selectedMethod === "mobileMoney" && (
+                <MobileMoneyForm
+                  onPaymentInitiated={function (): void {
+                    throw new Error("Function not implemented.");
+                  }}
+                  onPaymentComplete={function (): void {
+                    throw new Error("Function not implemented.");
+                  }}
+                />
+              )}
+              {selectedMethod === "wallet" && (
+                <WalletForm
+                  onPaymentInitiated={function (): void {
+                    throw new Error("Function not implemented.");
+                  }}
+                />
+              )}
+              {selectedMethod === "ecedi" && (
+                <EcediForm />
+              )}
+              {selectedMethod === "pss" && (
+                <PaySmallSmall />
+              )}
             </div>
           )}
-
           <SecurityBadge />
         </div>
       )}

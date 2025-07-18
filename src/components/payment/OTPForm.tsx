@@ -1,6 +1,5 @@
 "use client";
 import React, { useState, useRef, useEffect, KeyboardEvent } from "react";
-import axios from "axios";
 
 interface OTPVerificationFormProps {
   onComplete: (otp: string) => void;
@@ -20,6 +19,7 @@ const OTPForm: React.FC<OTPVerificationFormProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [countdown, setCountdown] = useState(30);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
@@ -82,17 +82,31 @@ const OTPForm: React.FC<OTPVerificationFormProps> = ({
     setIsSubmitting(true);
     setError("");
     try {
-      const response = await axios.post("/api/otp/verify", {
-        code: otpValue,
-        recipient: recipient.replace(/\*/g, ""),
+      const response = await fetch('/api/otp/verify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          code: otpValue,
+          phoneNumber: recipient.replace(/\*/g, ""),
+        }),
       });
-      if (response.data.success) {
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Verification failed');
+      }
+
+      if (data.success) {
+        setSuccess(true);
         onComplete(otpValue);
       } else {
         setError("Invalid verification code");
       }
     } catch (err) {
-      setError("Verification failed. Please try again.");
+      setError(err instanceof Error ? err.message : "Verification failed. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -103,6 +117,7 @@ const OTPForm: React.FC<OTPVerificationFormProps> = ({
       try {
         await onResend();
         setCountdown(30);
+        setError("");
       } catch (err) {
         setError("Failed to resend OTP. Please try again.");
       }
@@ -110,22 +125,31 @@ const OTPForm: React.FC<OTPVerificationFormProps> = ({
   };
 
   return (
-    <div className="w-full rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800 sm:p-8">
-      <h2 className="mb-6 text-2xl font-bold text-gray-900 dark:text-white text-center">
+    <div className="w-full rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+      <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-white text-center">
         Verify Your Mobile Number
       </h2>
-      <p className="mb-6 text-gray-600 dark:text-gray-300 text-center">
-        We&apos;ve sent a 4-digit verification code to your mobile number ending
-        with <span className="font-semibold">{recipient}</span>
-      </p>
+      
+      <div className="mb-4 flex items-center justify-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+        <span>Code sent to ******{recipient}</span>
+        <button 
+          onClick={handleResend}
+          disabled={countdown > 0}
+          className={`text-sm ${
+            countdown > 0
+              ? "text-gray-400 dark:text-gray-500"
+              : "text-[#513b7e] hover:text-[#3d2c5f] dark:text-[#7e6b9e] dark:hover:text-[#a396c1]"
+          }`}
+        >
+          {countdown > 0 ? `(${countdown}s)` : "Resend"}
+        </button>
+      </div>
 
-      <div className="mb-8 flex justify-center gap-3">
+      <div className="mb-6 flex justify-center gap-3">
         {otp.map((digit, index) => (
           <input
             key={index}
-            ref={(el) => {
-              inputRefs.current[index] = el;
-            }}
+            ref={(el) => { inputRefs.current[index] = el; }}
             type="text"
             inputMode="numeric"
             pattern="[0-9]*"
@@ -134,8 +158,14 @@ const OTPForm: React.FC<OTPVerificationFormProps> = ({
             onChange={(e) => handleChange(index, e.target.value)}
             onKeyDown={(e) => handleKeyDown(index, e)}
             onPaste={handlePaste}
-            className="h-12 w-12 rounded-lg border border-gray-300 bg-gray-50 text-center text-2xl font-bold text-gray-900 focus:border-[#513b7e] focus:outline-none focus:ring-2 focus:ring-[#7e6b9e] dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:border-[#513b7e] dark:focus:ring-[#3d2c5f]"
-            disabled={isSubmitting}
+            className={`h-14 w-14 rounded-lg border text-center text-3xl font-bold transition-colors focus:outline-none ${
+              error
+                ? "border-red-500 bg-red-50 text-red-900 dark:border-red-700 dark:bg-red-900/20 dark:text-red-100"
+                : success
+                ? "border-green-500 bg-green-50 text-green-900 dark:border-green-700 dark:bg-green-900/20 dark:text-green-100"
+                : "border-gray-300 bg-gray-50 text-gray-900 focus:border-[#513b7e] dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:border-[#7e6b9e]"
+            }`}
+            disabled={isSubmitting || success}
           />
         ))}
       </div>
@@ -146,64 +176,36 @@ const OTPForm: React.FC<OTPVerificationFormProps> = ({
         </div>
       )}
 
-      <div className="flex justify-center">
-        <button
-          type="button"
-          onClick={() => handleSubmit(otp.join(""))}
-          disabled={otp.some((d) => !d) || isSubmitting}
-          className={`flex w-full items-center justify-center rounded-lg px-5 py-3 text-sm font-medium text-white focus:outline-none focus:ring-4 ${
-            otp.some((d) => !d) || isSubmitting
-              ? 'bg-[#513b7e] opacity-70 cursor-not-allowed'
-              : 'bg-[#513b7e] hover:bg-[#3d2c5f] focus:ring-[#7e6b9e] dark:bg-[#513b7e] dark:hover:bg-[#3d2c5f] dark:focus:ring-[#7e6b9e]'
-          }`}
-        >
-          {isSubmitting ? (
-            <>
-              <svg
-                className="mr-2 h-4 w-4 animate-spin"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                ></circle>
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                ></path>
-              </svg>
-              Verifying...
-            </>
-          ) : (
-            "Verify & Complete Payment"
-          )}
-        </button>
-      </div>
+      {success && (
+        <div className="mb-4 text-center text-sm text-green-500 dark:text-green-400">
+          Verification successful!
+        </div>
+      )}
 
-      <div className="mt-6 text-center">
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          Didn&apos;t receive the code?{" "}
-          <button
-            type="button"
-            onClick={handleResend}
-            disabled={countdown > 0}
-            className={`font-medium ${
-              countdown > 0
-                ? "text-gray-400 dark:text-gray-500"
-                : "text-[#513b7e] hover:text-[#3d2c5f] dark:text-[#7e6b9e] dark:hover:text-[#a396c1]"
-            }`}
-          >
-            {countdown > 0 ? `Resend in ${countdown}s` : "Resend OTP"}
-          </button>
-        </p>
-      </div>
+      <button
+        type="button"
+        onClick={() => handleSubmit(otp.join(""))}
+        disabled={otp.some((d) => !d) || isSubmitting || success}
+        className={`w-full rounded-lg px-4 py-3 text-sm font-medium text-white transition-colors ${
+          otp.some((d) => !d) || isSubmitting || success
+            ? 'bg-[#513b7e]/70 cursor-not-allowed'
+            : 'bg-[#513b7e] hover:bg-[#3d2c5f]'
+        }`}
+      >
+        {isSubmitting ? (
+          <span className="flex items-center justify-center">
+            <svg className="mr-2 h-4 w-4 animate-spin" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Verifying...
+          </span>
+        ) : success ? (
+          "Verified ✓"
+        ) : (
+          "Verify & Complete Payment"
+        )}
+      </button>
     </div>
   );
 };

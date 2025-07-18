@@ -68,9 +68,9 @@ const CardForm: React.FC<CardPaymentFormProps> = ({
 
   return (
     <div className="w-full rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800 sm:p-8">
-      <h2 className="mb-6 text-2xl font-bold text-gray-900 dark:text-white text-center">
+      {/* <h2 className="mb-6 text-2xl font-bold text-gray-900 dark:text-white text-center">
         Card Payment
-      </h2>
+      </h2> */}
 
       <form onSubmit={handleSubmit}>
         <div className="mb-6 grid grid-cols-1 gap-4">
