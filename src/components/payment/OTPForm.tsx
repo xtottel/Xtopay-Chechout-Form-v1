@@ -76,7 +76,21 @@ const OTPForm: React.FC<OTPVerificationFormProps> = ({
   const handleSubmit = async (otpValue: string) => {
     setIsSubmitting(true);
     setError("");
+    console.log("Submitting:", {
+      code: otpValue,
+      phoneNumber: recipient.replace(/\*/g, ""),
+    });
+
     try {
+      // Extract just the digits from the recipient (remove any * masking)
+      const cleanPhoneNumber = recipient.replace(/\D/g, "");
+
+      // Ensure it's at least 9 digits (Ghana number without leading 0)
+      const formattedPhoneNumber =
+        cleanPhoneNumber.length >= 9
+          ? cleanPhoneNumber.slice(-9)
+          : cleanPhoneNumber;
+
       const response = await fetch("/api/otp/verify", {
         method: "POST",
         headers: {
@@ -84,14 +98,29 @@ const OTPForm: React.FC<OTPVerificationFormProps> = ({
         },
         body: JSON.stringify({
           code: otpValue,
-          phoneNumber: recipient.replace(/\*/g, ""),
+          phoneNumber: `0${formattedPhoneNumber}`, // Add leading 0 for local format
         }),
       });
-
+      console.log("Request sent:", {
+        code: otpValue,
+        phoneNumber: `0${formattedPhoneNumber}`,
+      });
       const data = await response.json();
+      console.log("Response:", data);
 
       if (!response.ok) {
-        throw new Error(data.error || "Verification failed");
+        // Provide specific error messages based on status code
+        if (response.status === 400) {
+          throw new Error("Invalid OTP code or phone number format.");
+        } else if (response.status === 404) {
+          throw new Error("OTP has expired or was not found.");
+        } else if (response.status === 401) {
+          throw new Error("Unauthorized access. Invalid credentials.");
+        } else {
+          throw new Error(
+            data.error || "Verification failed. Please try again."
+          );
+        }
       }
 
       if (data.success) {

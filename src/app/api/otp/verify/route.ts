@@ -4,6 +4,7 @@ import axios from 'axios'
 export async function POST(request: Request) {
   try {
     const { code, phoneNumber } = await request.json()
+    console.log('Received:', { code, phoneNumber });
 
     if (!code || !phoneNumber) {
       return NextResponse.json(
@@ -37,18 +38,20 @@ export async function POST(request: Request) {
       code,
       recipient: internationalPhone,
     })
+    console.log('Data to send:', data);
 
     const config = {
-      method: 'post',
-      maxBodyLength: Infinity,
-      url: 'https://api.kairosafrika.com/v1/external/validate/otp',
-      headers: {
-        'x-api-key': process.env.NEXT_PUBLIC_KAIROS_API_KEY || '',
-        'x-api-secret': process.env.NEXT_PUBLIC_KAIROS_API_SECRET || '',
-        'Content-Type': 'application/json',
-      },
-      data,
-    }
+  method: 'post',
+  maxBodyLength: Infinity,
+  url: 'https://api.kairosafrika.com/v1/external/validate/otp',
+  headers: {
+    'x-api-key': 'U2FsdGVkX1+Wcez4iQasGLnRUH49qZis4TkElhslqZI=',
+    'x-api-secret': 'ZRwHljsxRrYhvJiIXzwoZpP10457',
+    'Content-Type': 'application/json',
+  },
+  data,
+}
+
 
     const response = await axios.request(config)
 
