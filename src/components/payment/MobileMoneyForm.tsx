@@ -1,10 +1,10 @@
+// MobileMoneyForm.tsx
 "use client";
 import React, { useState, ChangeEvent } from "react";
 import Image from "next/image";
 import { Phone, ChevronDown } from "lucide-react";
 import OTPForm from "./OTPForm";
 import StatusModal from "./StatusModal";
-//import axios from "axios";
 
 interface MobileMoneyPaymentFormProps {
   onPaymentInitiated: () => void;
@@ -48,118 +48,136 @@ const MobileMoneyForm: React.FC<MobileMoneyPaymentFormProps> = ({
     }));
   };
 
-  // const sendOTP = async (phoneNumber: string) => {
-  //   try {
-  //     const data = JSON.stringify({
-  //       recipient: phoneNumber,
-  //       from: "Xtopay",
-  //       message: "Your verification code is {code}, it expires in {amount} {duration}",
-  //       pinLength: 4,
-  //       pinType: "NUMERIC",
-  //       expiry: {
-  //         amount: 3,
-  //         duration: "minutes"
-  //       },
-  //       maxAmountOfValidationRetries: 3
-  //     });
+  const sendOTP = async () => {
+    try {
+      const response = await fetch("/api/otp/send", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          phoneNumber: formData.phoneNumber,
+        }),
+      });
 
-  //     const config = {
-  //       method: 'post',
-  //       url: 'https://api.kairosafrika.com/v1/external/generate/otp',
-  //       headers: { 
-  //         'x-api-key': 'U2FsdGVkX1+Wcez4iQasGLnRUH49qZis4TkElhslqZI=', 
-  //         'x-api-secret': 'ZRwHljsxRrYhvJiIXzwoZpP10457', 
-  //         'Content-Type': 'application/json'
-  //       },
-  //       data
-  //     };
-
-  //     const response = await axios(config);
-  //     return response.data;
-  //   } catch (error) {
-  //     console.error("Error sending OTP:", error);
-  //     throw error;
-  //   }
-  // };
-
-// Update the sendOTP function in MobileMoneyForm.tsx
-const sendOTP = async (phoneNumber: string) => {
-  try {
-    const response = await fetch('/api/otp/send', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ phoneNumber }),
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to send OTP');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to send OTP");
+      }
+// If the OTP is sent successfully, show the OTP form
+      setShowOTP(true);
+      return await response.json();
+    } catch (error) {
+      console.error("OTP sending error:", error);
+      throw error;
     }
+  };
 
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error("Error sending OTP:", error);
-    throw error;
-  }
-};
+  const completePaymentWithOTP = async (otp: string) => {
+    try {
+      const response = await fetch("/api/payment/initiate/momo", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          phoneNumber: formData.phoneNumber,
+          network: formData.network,
+          otp,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Payment failed");
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error("Payment error:", error);
+      throw error;
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
+
     if (!formData.phoneNumber || !formData.network) {
       setIsLoading(false);
       return;
     }
 
     try {
-      // First initiate payment
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await sendOTP();
       onPaymentInitiated();
-      
-      // Then send OTP
-      await sendOTP(formData.phoneNumber);
       setShowOTP(true);
     } catch (error) {
-      setModalStatus({
-        isOpen: true,
-        status: "failed",
-        title: "Payment Failed",
-        description: "Failed to initiate payment. Please try again.",
-      });
+      // setModalStatus({
+      //   isOpen: true,
+      //   status: "failed",
+      //   title: "OTP Failed",
+      //   description:
+      //     error instanceof Error ? error.message : "Failed to send OTP",
+      // });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleOTPComplete = (otp: string) => {
-    // Here you would typically verify the OTP with your backend
-    console.log("OTP verified:", otp);
-    setModalStatus({
-      isOpen: true,
-      status: "success",
-      title: "Payment Successful",
-      description: "Your payment has been processed successfully.",
-    });
-    onPaymentComplete();
+  const handleOTPComplete = async (otp: string) => {
+    try {
+      const paymentResponse = await completePaymentWithOTP(otp);
+
+      if (paymentResponse.success) {
+        setModalStatus({
+          isOpen: true,
+          status: "success",
+          title: "Payment Successful",
+          description: "Your payment has been processed successfully.",
+        });
+        onPaymentComplete();
+      } else {
+        setModalStatus({
+          isOpen: true,
+          status: "failed",
+          title: "Payment Failed",
+          description: paymentResponse.message || "Payment failed",
+        });
+      }
+    } catch (error) {
+      setModalStatus({
+        isOpen: true,
+        status: "failed",
+        title: "Payment Failed",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Payment failed. Please try again.",
+      });
+    }
   };
 
   const handleOTPResend = async () => {
     try {
-      await sendOTP(formData.phoneNumber);
+      await sendOTP();
     } catch (error) {
-      console.error("Error resending OTP:", error);
+      setModalStatus({
+        isOpen: true,
+        status: "failed",
+        title: "OTP Failed",
+        description: "Failed to resend OTP. Please try again.",
+      });
     }
   };
 
   const closeModal = () => {
-    setModalStatus(prev => ({ ...prev, isOpen: false }));
+    setModalStatus((prev) => ({ ...prev, isOpen: false }));
   };
 
+  
   return (
-    <div className="w-full rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800 sm:p-8">
+    <div className="w-full rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
       {!showOTP ? (
         <form onSubmit={handleSubmit}>
           <div className="mb-6 grid grid-cols-1 gap-4">
@@ -234,29 +252,44 @@ const sendOTP = async (phoneNumber: string) => {
                 />
               </div>
             </div>
-          </div>
 
-          <button
-            type="submit"
-            disabled={isLoading}
-            className={`flex w-full items-center justify-center rounded-lg px-5 py-2.5 text-sm font-medium text-white focus:outline-none focus:ring-4 ${
-              isLoading
-                ? 'bg-[#513b7e] opacity-70 cursor-not-allowed'
-                : 'bg-[#513b7e] hover:bg-[#3d2c5f] focus:ring-[#7e6b9e] dark:bg-[#513b7e] dark:hover:bg-[#3d2c5f] dark:focus:ring-[#7e6b9e]'
-            }`}
-          >
-            {isLoading ? (
-              <>
-                <svg className="mr-2 h-4 w-4 animate-spin" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Processing...
-              </>
-            ) : (
-              'Pay with Mobile Money'
-            )}
-          </button>
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={isLoading}
+              className={`flex w-full items-center justify-center rounded-lg px-5 py-2.5 text-sm font-medium text-white transition-colors ${
+                isLoading
+                  ? "bg-[#513b7e] opacity-70 cursor-not-allowed"
+                  : "bg-[#513b7e] hover:bg-[#3d2c5f]"
+              }`}
+            >
+              {isLoading ? (
+                <>
+                  <svg
+                    className="mr-2 h-4 w-4 animate-spin"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  Processing...
+                </>
+              ) : (
+                "Pay with Mobile Money"
+              )}
+            </button>
+          </div>
         </form>
       ) : (
         <OTPForm
@@ -265,15 +298,7 @@ const sendOTP = async (phoneNumber: string) => {
           recipient={formData.phoneNumber.slice(-2)}
         />
       )}
-
-      <StatusModal
-        isOpen={modalStatus.isOpen}
-        status={modalStatus.status}
-        title={modalStatus.title}
-        description={modalStatus.description}
-        onClose={closeModal}
-        onAction={closeModal}
-      />
+      <StatusModal {...modalStatus} onClose={closeModal} />
     </div>
   );
 };

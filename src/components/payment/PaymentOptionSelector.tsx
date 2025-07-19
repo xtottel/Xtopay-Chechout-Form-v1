@@ -19,7 +19,6 @@ import Image from "next/image";
 import { ReportModal } from "./ReportModal";
 import Link from "next/link";
 
-
 type PaymentMethod = "card" | "mobileMoney" | "wallet" | "ecedi" | "pss";
 
 interface PaymentOptionSelectorProps {
@@ -127,6 +126,34 @@ const PaymentOptionSelector: React.FC<PaymentOptionSelectorProps> = ({
     </div>
   );
 
+  // Add this skeleton component near the other loading components
+  const PaymentOptionsSkeleton = () => (
+    <div className="space-y-3">
+      {[1, 2, 3, 4, 5].map((item) => (
+        <div
+          key={item}
+          className="flex w-full items-center justify-between rounded-lg border border-gray-200 bg-white p-3.5 dark:border-gray-700 dark:bg-gray-800"
+        >
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg bg-gray-200 dark:bg-gray-700 animate-pulse"></div>
+            <div className="h-4 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="flex gap-1">
+              {[1, 2, 3].map((brand) => (
+                <div
+                  key={brand}
+                  className="h-4 w-6 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"
+                ></div>
+              ))}
+            </div>
+            <div className="h-4 w-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
   const PaymentDetailsDisplay = () => {
     if (loading) {
       return (
@@ -212,92 +239,96 @@ const PaymentOptionSelector: React.FC<PaymentOptionSelectorProps> = ({
       {uuid && (
         <div className="space-y-6 mt-6">
           {!selectedMethod ? (
-            <div className="space-y-3">
-              {[
-                {
-                  method: "mobileMoney",
-                  title: "Mobile Money",
-                  icon: <Smartphone className="h-5 w-5 text-yellow-500" />,
-                  brands: ["momo", "telecel", "at"],
-                  color: "yellow",
-                },
-                {
-                  method: "card",
-                  title: "Bank Card",
-                  icon: <CreditCard className="h-5 w-5 text-blue-500" />,
-                  brands: ["visa", "mastercard", "verve"],
-                  color: "blue",
-                },
-                {
-                  method: "wallet",
-                  title: "Wallet",
-                  icon: <Wallet className="h-5 w-5 text-emerald-500" />,
-                  brands: [
-                    "xtopay",
-                    "hubtel",
-                    "gmoney",
-                    "zeepay",
-                    "Kowri",
-                    "expresspay",
-                  ],
-                  color: "emerald",
-                },
-                {
-                  method: "ecedi",
-                  title: "eCedi",
-                  icon: <BadgeCent className="h-5 w-5 text-[#FFD700]" />,
-                  brands: ["BoG", "ghipss"],
-                  color: "gold",
-                },
-                {
-                  method: "pss",
-                  title: "Pay Small Small",
-                  icon: <HandCoins className="h-5 w-5 text-pink-500" />,
-                  brands: ["momo", "telecel"],
-                  color: "pink",
-                },
-              ].map((option) => (
-                <button
-                  key={option.method}
-                  onClick={() => {
-                    log("Payment method selected", { method: option.method });
-                    setSelectedMethod(option.method as PaymentMethod);
-                  }}
-                  className="flex w-full items-center justify-between rounded-lg border border-gray-200 bg-white p-3.5 transition-colors hover:border-[#513b7e] hover:bg-[#f5f2fa] dark:border-gray-700 dark:bg-gray-800 dark:hover:border-[#7e6b9e]"
-                >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`rounded-lg bg-[#f5f2fa] p-2 dark:bg-[#3d2c5f]`}
-                    >
-                      {option.icon}
+            loading ? (
+              <PaymentOptionsSkeleton />
+            ) : (
+              <div className="space-y-3">
+                {[
+                  {
+                    method: "mobileMoney",
+                    title: "Mobile Money",
+                    icon: <Smartphone className="h-5 w-5 text-yellow-500" />,
+                    brands: ["momo", "telecel", "at"],
+                    color: "yellow",
+                  },
+                  {
+                    method: "card",
+                    title: "Bank Card",
+                    icon: <CreditCard className="h-5 w-5 text-blue-500" />,
+                    brands: ["visa", "mastercard", "verve"],
+                    color: "blue",
+                  },
+                  {
+                    method: "wallet",
+                    title: "Wallet",
+                    icon: <Wallet className="h-5 w-5 text-emerald-500" />,
+                    brands: [
+                      "xtopay",
+                      "hubtel",
+                      "gmoney",
+                      "zeepay",
+                      "Kowri",
+                      "expresspay",
+                    ],
+                    color: "emerald",
+                  },
+                  {
+                    method: "ecedi",
+                    title: "eCedi",
+                    icon: <BadgeCent className="h-5 w-5 text-[#FFD700]" />,
+                    brands: ["BoG", "ghipss"],
+                    color: "gold",
+                  },
+                  {
+                    method: "pss",
+                    title: "Pay Small Small",
+                    icon: <HandCoins className="h-5 w-5 text-pink-500" />,
+                    brands: ["momo", "telecel"],
+                    color: "pink",
+                  },
+                ].map((option) => (
+                  <button
+                    key={option.method}
+                    onClick={() => {
+                      log("Payment method selected", { method: option.method });
+                      setSelectedMethod(option.method as PaymentMethod);
+                    }}
+                    className="flex w-full items-center justify-between rounded-lg border border-gray-200 bg-white p-3.5 transition-colors hover:border-[#513b7e] hover:bg-[#f5f2fa] dark:border-gray-700 dark:bg-gray-800 dark:hover:border-[#7e6b9e]"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`rounded-lg bg-[#f5f2fa] p-2 dark:bg-[#3d2c5f]`}
+                      >
+                        {option.icon}
+                      </div>
+                      <span className="font-medium text-gray-900 dark:text-white">
+                        {option.title}
+                      </span>
                     </div>
-                    <span className="font-medium text-gray-900 dark:text-white">
-                      {option.title}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="flex gap-1">
-                      {option.brands.map((brand) => (
-                        <Image
-                          key={brand}
-                          src={`/brands/${brand}.svg`}
-                          alt={brand}
-                          width={24}
-                          height={16}
-                          className="h-4 w-6 object-contain"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.onerror = null;
-                            target.src = "/default-brand-logo.svg";
-                          }}
-                        />
-                      ))}
+                    <div className="flex items-center gap-2">
+                      <div className="flex gap-1">
+                        {option.brands.map((brand) => (
+                          <Image
+                            key={brand}
+                            src={`/brands/${brand}.svg`}
+                            alt={brand}
+                            width={24}
+                            height={16}
+                            className="h-4 w-6 object-contain"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.onerror = null;
+                              target.src = "/default-brand-logo.svg";
+                            }}
+                          />
+                        ))}
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-gray-400" />
                     </div>
-                    <ChevronRight className="h-4 w-4 text-gray-400" />
-                  </div>
-                </button>
-              ))}
-            </div>
+                  </button>
+                ))}
+              </div>
+            )
           ) : (
             <div className="space-y-6">
               <button
@@ -335,12 +366,8 @@ const PaymentOptionSelector: React.FC<PaymentOptionSelectorProps> = ({
                   }}
                 />
               )}
-              {selectedMethod === "ecedi" && (
-                <EcediForm />
-              )}
-              {selectedMethod === "pss" && (
-                <PaySmallSmall />
-              )}
+              {selectedMethod === "ecedi" && <EcediForm />}
+              {selectedMethod === "pss" && <PaySmallSmall />}
             </div>
           )}
           <SecurityBadge />

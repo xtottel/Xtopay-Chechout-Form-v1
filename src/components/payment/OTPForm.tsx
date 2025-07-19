@@ -1,17 +1,16 @@
+// OTPForm.tsx
 "use client";
 import React, { useState, useRef, useEffect, KeyboardEvent } from "react";
 
 interface OTPVerificationFormProps {
   onComplete: (otp: string) => void;
   onResend: () => Promise<void>;
-  otpValue?: string;
   recipient?: string;
 }
 
 const OTPForm: React.FC<OTPVerificationFormProps> = ({
   onComplete,
   onResend,
-  otpValue = "",
   recipient = "****45",
 }) => {
   const OTP_LENGTH = 4;
@@ -21,12 +20,6 @@ const OTPForm: React.FC<OTPVerificationFormProps> = ({
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
-
-  useEffect(() => {
-    if (otpValue && otpValue.length === OTP_LENGTH && /^\d+$/.test(otpValue)) {
-      setOtp(otpValue.split(""));
-    }
-  }, [otpValue]);
 
   useEffect(() => {
     inputRefs.current[0]?.focus();
@@ -63,7 +56,9 @@ const OTPForm: React.FC<OTPVerificationFormProps> = ({
 
   const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
     e.preventDefault();
-    const pasteData = e.clipboardData.getData("text/plain").slice(0, OTP_LENGTH);
+    const pasteData = e.clipboardData
+      .getData("text/plain")
+      .slice(0, OTP_LENGTH);
     if (/^\d+$/.test(pasteData)) {
       const newOtp = [...otp];
       for (let i = 0; i < pasteData.length && i < OTP_LENGTH; i++) {
@@ -82,10 +77,10 @@ const OTPForm: React.FC<OTPVerificationFormProps> = ({
     setIsSubmitting(true);
     setError("");
     try {
-      const response = await fetch('/api/otp/verify', {
-        method: 'POST',
+      const response = await fetch("/api/otp/verify", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           code: otpValue,
@@ -96,7 +91,7 @@ const OTPForm: React.FC<OTPVerificationFormProps> = ({
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Verification failed');
+        throw new Error(data.error || "Verification failed");
       }
 
       if (data.success) {
@@ -106,7 +101,11 @@ const OTPForm: React.FC<OTPVerificationFormProps> = ({
         setError("Invalid verification code");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Verification failed. Please try again.");
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Verification failed. Please try again."
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -125,31 +124,23 @@ const OTPForm: React.FC<OTPVerificationFormProps> = ({
   };
 
   return (
-    <div className="w-full rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+    <div className="w-full  bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+      {/* /rounded-xl border border-gray-200 / */}
       <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-white text-center">
-        Verify Your Mobile Number
+        Verify Payment
       </h2>
-      
+
       <div className="mb-4 flex items-center justify-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-        <span>Code sent to ******{recipient}</span>
-        <button 
-          onClick={handleResend}
-          disabled={countdown > 0}
-          className={`text-sm ${
-            countdown > 0
-              ? "text-gray-400 dark:text-gray-500"
-              : "text-[#513b7e] hover:text-[#3d2c5f] dark:text-[#7e6b9e] dark:hover:text-[#a396c1]"
-          }`}
-        >
-          {countdown > 0 ? `(${countdown}s)` : "Resend"}
-        </button>
+        <span>Code sent to your phone ******{recipient}</span>
       </div>
 
       <div className="mb-6 flex justify-center gap-3">
         {otp.map((digit, index) => (
           <input
             key={index}
-            ref={(el) => { inputRefs.current[index] = el; }}
+            ref={(el) => {
+              inputRefs.current[index] = el;
+            }}
             type="text"
             inputMode="numeric"
             pattern="[0-9]*"
@@ -162,8 +153,8 @@ const OTPForm: React.FC<OTPVerificationFormProps> = ({
               error
                 ? "border-red-500 bg-red-50 text-red-900 dark:border-red-700 dark:bg-red-900/20 dark:text-red-100"
                 : success
-                ? "border-green-500 bg-green-50 text-green-900 dark:border-green-700 dark:bg-green-900/20 dark:text-green-100"
-                : "border-gray-300 bg-gray-50 text-gray-900 focus:border-[#513b7e] dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:border-[#7e6b9e]"
+                  ? "border-green-500 bg-green-50 text-green-900 dark:border-green-700 dark:bg-green-900/20 dark:text-green-100"
+                  : "border-gray-300 bg-gray-50 text-gray-900 focus:border-[#513b7e] dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:border-[#7e6b9e]"
             }`}
             disabled={isSubmitting || success}
           />
@@ -188,15 +179,26 @@ const OTPForm: React.FC<OTPVerificationFormProps> = ({
         disabled={otp.some((d) => !d) || isSubmitting || success}
         className={`w-full rounded-lg px-4 py-3 text-sm font-medium text-white transition-colors ${
           otp.some((d) => !d) || isSubmitting || success
-            ? 'bg-[#513b7e]/70 cursor-not-allowed'
-            : 'bg-[#513b7e] hover:bg-[#3d2c5f]'
+            ? "bg-[#513b7e]/70 cursor-not-allowed"
+            : "bg-[#513b7e] hover:bg-[#3d2c5f]"
         }`}
       >
         {isSubmitting ? (
           <span className="flex items-center justify-center">
             <svg className="mr-2 h-4 w-4 animate-spin" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              ></circle>
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
             </svg>
             Verifying...
           </span>
@@ -205,6 +207,19 @@ const OTPForm: React.FC<OTPVerificationFormProps> = ({
         ) : (
           "Verify & Complete Payment"
         )}
+      </button>
+
+      <button
+        onClick={handleResend}
+        disabled={countdown > 0}
+        className={`w-full text-sm text-center p-2.5 flex justify-center items-center transition-colors ${
+          countdown > 0
+            ? "text-gray-400 dark:text-gray-500"
+            : "text-[#513b7e] hover:text-[#3d2c5f] dark:text-[#7e6b9e] dark:hover:text-[#a396c1]"
+        }`}
+      >
+        Didn&apos;t receive the code?{" "}
+        {countdown > 0 ? ` (${countdown}s)` : " Resend"}
       </button>
     </div>
   );

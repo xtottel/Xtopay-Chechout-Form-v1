@@ -9,12 +9,12 @@
   "orientation": "portrait",
   "icons": [
     {
-      "src": "https://xtopay.co/favicon.png",
+      "src": "https://www.xtopay.co/favicon.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "https://xtopay.co/favicon.png",
+      "src": "https://www.xtopay.co/favicon.png",
       "sizes": "512x512",
       "type": "image/png"
     }
